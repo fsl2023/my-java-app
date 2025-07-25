@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/yourusername/your-java-app.git'
+                checkout scm
             }
         }
 
@@ -29,6 +29,12 @@ pipeline {
             steps {
                 sh 'docker run -d -p 8080:8080 --name demo-app demo-app:latest'
             }
+        }
+    }
+    post {
+        always {
+            sh 'docker stop demo-app || true'
+            sh 'docker rm demo-app || true'
         }
     }
 }
