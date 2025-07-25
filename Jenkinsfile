@@ -2,8 +2,15 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven3'    // Make sure you configure Maven in Jenkins Global Tools
-        jdk 'JDK17'       // Make sure JDK 17 is configured too
+        maven 'Maven3'
+        jdk 'JDK17'
+    }
+
+    environment {
+        IMAGE_NAME = 'demo-app'
+        CONTAINER_NAME = 'demo-app'
+        HOST_PORT = '8081'       // Use this instead of 8080
+        CONTAINER_PORT = '8080'
     }
 
     stages {
@@ -21,18 +28,24 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t demo-app:latest .'
+                sh "docker build -t ${IMAGE_NAME}:latest ."
             }
         }
 
         stage('Run Docker Container') {
             steps {
-                sh 'docker run -d -p 8080:8080 --name demo-app demo-app:latest'
+                sh """
+                    docker stop ${CONTAINER_NAME} || true
+                    docker rm ${CONTAINER_NAME} || true
+                    docker run -d -p ${HOST_PORT}:${CONTAINER_PORT} --name ${CONTAINER_NAME} ${IMAGE_NAME}:latest
+                """
             }
         }
     }
+
     post {
         always {
+            echo 'Cleaning up any stale container...'
             sh 'docker stop demo-app || true'
             sh 'docker rm demo-app || true'
         }
